@@ -140,10 +140,19 @@ class Message(object):
         if not self.raw_base64:
             raise ValueError("missing raw_base64 field")
         email = base64.urlsafe_b64decode(self.raw_base64)
-        return elib.message_from_bytes(email)
+        return elib.message_from_bytes(email, policy=elib.policy.default)
 
     def as_string(self, with_header=False) -> str:
         return self.get_std_msg().as_string(unixfrom=with_header, maxheaderlen=0)
+
+    def as_simple_string(self, headers=["from", "to", "cc", "bcc", "subject"]) -> str:
+        res = []
+        message = self.get_std_msg()
+        for h in headers:
+            res.append(f"{h}: {message[h]}")
+        body = message.get_body()
+        res.append("\n\n" + body.get_content())
+        return "\n".join(res)
 
     def forward_body(self, to: str, sender: str) -> str:
         """return ready to sent forward message"""
